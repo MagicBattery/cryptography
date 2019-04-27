@@ -1,6 +1,7 @@
-//Rotation cipher encryption
-
-/*               MODE TABLE
+/*          
+  To be included as the header file, 'input.txt':
+  
+  LINE #1:Encryption / Decryption Mode
    _________________________________________
   |     |                                   |
   |  0  |  Rotation - Encrypt               | 
@@ -22,12 +23,24 @@
   |_____|___________________________________|
   
   
-  */
+  LINE #2: Key: '#' followed by ____________ ROTATION: integer [0, 25] (ie. #3)
+                                    |
+                                    |
+                                    |_______ SUBSTITUTION: 26 unique letters (ie. #QWERTYUIOPASDFGHJKLZXCVBNM)
+                                    |
+                                    |
+                                    |_______ Nothing if key not applicable (ie. #)
+                                    
+  
+  FOLLOWING LINES: Cipher / plain text
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
-void getInput(char *msg);
+void readInput(char *mode, char *key, char *msg);
+int getRotKey(char *key);
+void getSubKey(char *key, char *ubKey);
 
 void rotationEnc(char *msg, int k, int size); //Rotation cipher function prototype (encryption mode)
 void rotationDec(char *msg, int k, int size); //Rotation cipher function prototype (decryption mode)
@@ -35,83 +48,63 @@ void rotationDecNoKey(char *msg, int size); //Rotation cipher function prototype
 
 void substitutionEnc(char *msg, char *s, int size); //Substitution cipher function prototype
 void substitutionDec(char *msg, char *s, int size); //Substitution cipher function prototype
-void substitutionDecNoKey(char *msg, char *s, int size); //Substitution cipher function prototype
+void substitutionDecNoKey(char *msg, int size); //Substitution cipher function prototype
 
 int main() {
-    
-  int mode = 0; //Mode to be selected by user
   
-  char msg[12]; //Hard-coded input (for now)
-  //getInput(msg); //Get the input file
-  int size = (int)sizeof(msg);
-  //printf("%s", msg);
+  int mode;
+  int rotKey;
+  char subKey[26];
+  char modeChar[50];
+  char key[27];
+  char msg[1000];
+  int size = sizeof(msg);
   
-  
-  //Display welcome message and mode table to the user
-  printf("Welcome to cool cats cipher!\n\n");
-  printf("******* MODE TABLE *********\n");
-  printf("0: Rotation - Encrypt\n");
-  printf("1: Rotation - Decrypt (With Key)\n");
-  printf("2: Rotation - Decrypt (No Key)\n");
-  printf("3: Substitution - Encrypt\n");
-  printf("4: Substitution - Decrypt (With Key)\n");
-  printf("5: Substitution - Decrypt (No Key)\n\n");
-  printf("Choose a mode and press enter: ");
-  scanf("%d", &mode); //User selects their desired mode
-  printf("\n");
-  
-  /////////////////////////////////////////////
+  readInput(modeChar, key, msg);
+  mode = atoi(modeChar); //Convert the read mode string to an integer
   
   
-  /////////////////////////////////////////////
+  printf("Mode: %d\n", mode);
+  printf("Key: %s", key);
+  printf("Message: %s", msg);
   
-  int k; //Rotation cipher key
-  char s[26]; //Substitution cipher key
   
-  /////////////////////////////////////////////
-  
-  switch(mode) { //User's input for mode determines which function is called
+  switch(mode) { //Use the header file mode to determine which function must be called
       case 0:
-              printf("ROTATION ENCRYPTION SELECTED\n");
-              printf("Please enter desired rotation cipher key (int [1, 25]): ");
-              scanf("%d", &k);
-              rotationEnc(msg, k, size);
+              //Rotation encryption
+              rotKey = getRotKey(key);
+              rotationEnc(msg, rotKey, size);
               break;
               
       case 1:
-              printf("ROTATION DECRYPTION (WITH KEY) SELECTED\n");
-              printf("Please enter the rotation cipher key of the inputted message (int [0, 25]): ");
-              scanf("%d", &k);
-              rotationDec(msg, k, size);
+              //Rotation decryption
+              rotKey = getRotKey(key);
+              rotationDec(msg, rotKey, size);
               break;
               
       case 2:
-              printf("ROTATION DECRYPTION (NO KEY) SELECTED\n");
-              printf("No Key required!\n");
+              //Rotation decryption (no key)
               rotationDecNoKey(msg, size);
               break;
               
       case 3:
-              printf("SUBSTITUTION ENCRYPTION SELECTED\n");
-              printf("Please enter desired rotation cipher key (26 unique letters): ");
-              scanf("%s", s);
-              substitutionEnc(msg, s, size);
+              //Substitution encryption
+              getSubKey(key, subKey);
+              substitutionEnc(msg, subKey, size);
               break;
               
       case 4:
-              printf("SUBSTITUTION DECRYPTION (WITH KEY) SELECTED\n");
-              printf("Please enter the substitution cipher key of the inputted message (26 unique letters): ");
-              scanf("%s", s);
-              substitutionDec(msg, s, size);
+              //Substitution decryption
+              getSubKey(key, subKey);
+              substitutionDec(msg, subKey, size);
               break;
       
       case 5:
-              printf("SUBSTITUTION DECRYPTION (NO KEY) SELECTED\n");
-              printf("No Key required!\n");
-              substitutionDecNoKey(msg, s, size);
+              //Substitution decryption (no key)
+              substitutionDecNoKey(msg, size);
               break;
               
-      default: printf("Please choose a valid mode (0-5)");
+      default: printf("Mode input not recognised.");
                break;
   }
 
@@ -120,21 +113,54 @@ int main() {
   return 0;
 }
 
+///////////////// PERIPHERY FUNCTIONS //////////////////
 
-//Get Input
-void getInput(char *msg) {
-    char temp = '0';
-    int i = 0;
+//Read input from file, and delineate header components
+void readInput(char *mode, char *key, char *msg) {
     
-    while(temp != '#') {
-        scanf("%c", &temp);
-        msg[i] = temp;
+    FILE *input;
+    input = fopen("input.txt", "r");
+    
+    //Read mode from header file
+    //printf("Reading mode from header file...\n");
+    fgets(mode, 50, input);
+    
+    //Read key from header file
+    //printf("Looking for key...\n");
+    fgets(key, 50, input);
+    
+    int i = 0;
+    while(!feof(input)) {
+        fscanf(input, "%c", &msg[i]);
         i++;
     }
+    
+    fclose(input);
+    
+    return;      
+}
 
+//Convert the header file Line #2 to a computable rotation cipher key (integer)
+int getRotKey(char *key) {
+    key[0] = ' '; //Get rid of the prefix '#'
+    return atoi(key); //Convert remaining numerals to an integer and return
+}
+
+//Remove the hash '#' of the header file substitution key from Line #2 and store in new array subKey[]
+void getSubKey(char *key, char *subKey) {
+    for(int i = 0; i <= 25; i++) {
+        subKey[i] = key[i + 1];
+    }
+    
     return;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////                                                                                                      /////////////////  
+/////////////////                          CRYPTOGRAPHY                         ALGORITHMS                             ///////////////// 
+/////////////////                                                                                                      /////////////////  
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ///////////////////// ROTATION CIPHER ENCRYPTION ////////////////////////
@@ -258,7 +284,7 @@ void substitutionDec(char *msg, char *s, int size) {
 }
 
 ////////////// SUBSTITUTION CIPHER DECRYPTION (NO KEY) ////////////////////
-void substitutionDecNoKey(char *msg, char *s, int size) {
+void substitutionDecNoKey(char *msg, int size) {
     
 }
 
