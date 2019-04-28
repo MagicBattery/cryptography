@@ -361,6 +361,7 @@ void substitutionDecNoKey(char *msg, int size) {
     int letterFreq[26] = {0};
     char ones[26] = {0};
     char alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char special[26] = "ETAOINSRHLDCUMFPGWYBVKXJQZ";
     char temp;
     
     //Tally the frequency of each letter, and store in array letterFreq[]
@@ -390,14 +391,11 @@ void substitutionDecNoKey(char *msg, int size) {
     }
     
     //Assume MOST frequent letter is 'E', 2nd 'T', 3rd 'A', 4th 'O', 5th 'I'
-    newKey[4] = alphabet[0];
-    newKey[19] = alphabet[1];
-    newKey[0] = alphabet[2];
-    newKey[14] = alphabet[3];
-    newKey[8] = alphabet[4];
+    for(int i = 0; i < 26; i++) {
+        newKey[special[i] - 65] = alphabet[i];
+    }
     
     //Break message up into individual words to locate all one-letter words
-    
     char msg2[size];
     char *found;
     
@@ -414,9 +412,6 @@ void substitutionDecNoKey(char *msg, int size) {
         found = strtok(NULL, " ");
     }
     
-    //TEST DECRYPTION 1
-    //partialSubDec(msg, newKey, size);
-    
     //Find most common one-letter word.
     int max = 0;
     int index;
@@ -428,33 +423,20 @@ void substitutionDecNoKey(char *msg, int size) {
     }
     
     newKey[0] = index + 65; //Assume this letter should be A.
-    newKey[7] = 'H';
-    newKey[17] = 'X';
-    newKey[21] = 'G';
-    newKey[13] = 'M';
-    newKey[20] = 'E';
-    newKey[6] = 'Q';
-    newKey[3] = 'R';
-    newKey[24] = 'V';
-    newKey[13] = 'K';
-    newKey[18] = 'J';
-    newKey[5] = 'M';
-    newKey[11] = 'Z';
-    newKey[10] = 'A';
-    newKey[9] = 'D';
-    newKey[22] = 'P';
-    newKey[15] = 'I';
-    newKey[2] = 'L';
-    newKey[12] = 'O';
-    newKey[1] = 'W';
     
-    //TEST DECRYPTION 2
-    partialSubDec(msg, newKey, size);
+    for(int i = 0; i < 26; i++) {
+        printf("%c", newKey[i]);
+    }
+    printf("\n");
+  
+   partialSubDec(msg, newKey, size);
+   
+   printf("\nDay one cipher texts provided:\n");
+   partialSubDec(msg, "NWLRBMQHCDAZOKYITXJFEGPUVD", size);
 }
 
 void partialSubDec(char *msg, char *newKey, int size) {
     char temp2;
-    printf("////////// CIPHER ATTEMPT //////////\n\n");
     
     for(int i = 0; i < size; i++) {
         if(msg[i] < 65 || msg[i] > 90) {
@@ -472,7 +454,6 @@ void partialSubDec(char *msg, char *newKey, int size) {
                 }
             }
         }
-
     }
     
     printf("\n");
