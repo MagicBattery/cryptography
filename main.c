@@ -112,7 +112,7 @@ int main() {
                break;
   }
 
-  printf("File output!\n");
+  printf("\nFile output!\n");
 
   return 0;
 }
@@ -239,9 +239,11 @@ void rotationEnc(char *msg, int k, int size) { //Rotation cipher which takes the
   for(int i = 0; i < size; i++) { //Iterate through each element in the msg array, converting each character to be encrypted, then storing in the cipher array.
       if(msg[i] < 65 || msg[i] > 90) {
           fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
       } else {
           temp = ((msg[i] - 65 + k)%26) + 65;
           fprintf(encrypted, "%c", temp); //Print to file
+          printf("%c", temp); //Print to stdout (for markers)
       }
     } 
 
@@ -262,12 +264,15 @@ void rotationDec(char *msg, int k, int size) {
     for(int i = 0; i < size; i++) { //Iterate through each element in the msg array, converting each character to be encrypted, then storing in the cipher array.
       if(msg[i] < 65 || msg[i] > 90) {
           fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
       } else {
           temp = ((msg[i] - 65 + (26 - k))%26) + 65;
           fprintf(encrypted, "%c", temp); //Print to file
+          printf("%c", temp); //Print to stdout (for markers)
       }
     }
     
+    fprintf(encrypted, "\n\n");
     fclose(encrypted); //Close the file
   
     return;
@@ -279,7 +284,7 @@ void rotationDecNoKey(char *msg, int size) {
     int msgSize = strlen(msg);
     char attempts[26][msgSize]; //Store 26 new arrays, trying each key for later analysis
     int matchingWords[26] = {0}; //To test how many words match the dictionary for all 26 keys
-    int key; //To be found
+    int matchingWordsIndex[26] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
     char temp;
     
     //Decrypt with all 26 possible keys
@@ -294,20 +299,47 @@ void rotationDecNoKey(char *msg, int size) {
             }
         }
         
-        matchingWords[x] = uniqueWords(attempts[x]);
+        matchingWords[x] = uniqueWords(attempts[x]); //Record how many words match for this particular key.
     }
 
-    //Find max index of matchingWords to deduce most likely key:
-    int max = 0;
-    for(int i = 0; i < 26; i++) {
-        if(matchingWords[i] > max) {
-            max = matchingWords[i];
-            key = i;
-        }
+    //Sort number of matchingWords with their indexes to deduce most likely keys:
+    for(int j = 0; j < 25; j++) {
+        for(int i = 0; i < (25 - j); i++) {
+            if(matchingWords[i] < matchingWords[i + 1]) {
+                temp = matchingWords[i];
+                matchingWords[i] = matchingWords[i + 1];
+                matchingWords[i + 1] = temp;
+                
+                temp = matchingWordsIndex[i];
+                matchingWordsIndex[i] = matchingWordsIndex[i + 1];
+                matchingWordsIndex[i + 1] = temp;
+            }
+        }  
     }
     
-    //Finally, the key is known and key = maxIndex. Now decrypt like usual.
-    rotationDec(msg, key, msgSize);
+    //Finally, the some likely keys are known. Now decrypt like usual with top 5 keys.
+    FILE * encrypted; //Delare a pointer to a file
+    char tempChar;
+    encrypted = fopen("output.txt", "w");  //Open a new file
+        
+    for(int j = 0; j < 5; j++) {
+        fprintf(encrypted, "Word matches: %d\n", matchingWords[j]);
+        printf("Word matches: %d\n", matchingWords[j]);
+        for(int i = 0; i < msgSize; i++) { //Iterate through each element in the msg array, converting each character to be encrypted, then printing
+          if(msg[i] < 65 || msg[i] > 90) {
+              fprintf(encrypted, "%c", msg[i]); //Print to file
+              printf("%c", msg[i]); //Print to stdout (for markers)
+          } else {
+              tempChar = ((msg[i] - 65 + (26 - matchingWordsIndex[j]))%26) + 65;
+              fprintf(encrypted, "%c", tempChar); //Print to file
+              printf("%c", tempChar); //Print to stdout (for markers)
+          }
+        }
+        
+        fprintf(encrypted, "\n\n");
+        printf("\n\n");
+    }
+    fclose(encrypted); //Close the file
 
 }
 
@@ -320,10 +352,12 @@ void substitutionEnc(char *msg, char *s, int size) {
     
     for(int i = 0; i < size; i++) {
         if(msg[i] < 65 || msg[i] > 90) {
-          fprintf(encrypted, "%c", msg[i]); //Print to file  
+          fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
         } else {
           temp = s[msg[i] - 65]; //Index of the letter being read (1-26)
-          fprintf(encrypted, "%c", temp);
+          fprintf(encrypted, "%c", temp); //Print to file
+          printf("%c", temp); //Print to stdout (for markers)
         }
         
     }
@@ -339,12 +373,14 @@ void substitutionDec(char *msg, char *s, int size) {
     
     for(int i = 0; i < size; i++) {
         if(msg[i] < 65 || msg[i] > 90) {
-          fprintf(encrypted, "%c", msg[i]); //Print to file  
+          fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
         } else {
             for(int j = 0; j < 26; j++) {
                 if(msg[i] == s[j]) {
-                    temp = j + 65;
-                    fprintf(encrypted, "%c", temp);
+                    temp = j + 65; //Determine char no. of the decrypted letter.
+                    fprintf(encrypted, "%c", temp); //Print to file
+                    printf("%c", temp); //Print to stdout (for markers)
                     break;
                 }
             }
