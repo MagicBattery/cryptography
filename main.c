@@ -1,4 +1,9 @@
 /*          
+  c3329722 - 2018
+  Program takes an input file with a header to choose between the modes below. The program will then use algorithms to either encrypt
+  or decrypt either a rotation or substitution cipher based on the user's input. If 'no key' mode is input, the program will perform
+  a statistical analysis to attemp to identify the correct plain text.
+  
   To be included as the header file, 'input.txt':
   
   LINE #1:Encryption / Decryption Mode
@@ -55,7 +60,6 @@ void rotationDecNoKey(char *msg, int size); //Rotation cipher function prototype
 void substitutionEnc(char *msg, char *s, int size); //Substitution cipher function prototype
 void substitutionDec(char *msg, char *s, int size); //Substitution cipher function prototype
 void substitutionDecNoKey(char *msg, int size); //Substitution cipher function prototype
-void partialSubDec(char *msg, char *newKey, int size); //Helper to the above function
 
 int main() {
   
@@ -396,8 +400,11 @@ void substitutionDecNoKey(char *msg, int size) {
     char newKey[26] = {0};
     int letterFreq[26] = {0};
     char ones[26] = {0};
+    char threes[50][3] = {0};
     char alphabet[26] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    char special[26] = "ETAOINSRHLDCUMFPGWYBVKXJQZ";
+    char mostFrequent[26] = "ETAOINSRHLDCUMFPGWYBVKXJQZ";
+    char special[26] = "NWLRBMQHCDAZOKYITXJFEGPUVD";
+    char words[200][15];
     char temp;
     
     //Tally the frequency of each letter, and store in array letterFreq[]
@@ -411,7 +418,6 @@ void substitutionDecNoKey(char *msg, int size) {
     }
     
     //Sort the array from highest frequency to lowest (bubble sort)
-    
     for(int j = 0; j < 25; j++) {
         for(int i = 0; i < (25 - j); i++) {
             if(letterFreq[i] < letterFreq[i + 1]) {
@@ -426,29 +432,49 @@ void substitutionDecNoKey(char *msg, int size) {
         }  
     }
     
-    //Assume MOST frequent letter is 'E', 2nd 'T', 3rd 'A', 4th 'O', 5th 'I'
+    //Assume MOST frequent letter is 'E', 2nd 'T', 3rd 'A', 4th 'O', 5th 'I', and so on
     for(int i = 0; i < 26; i++) {
-        newKey[special[i] - 65] = alphabet[i];
+        newKey[mostFrequent[i] - 65] = alphabet[i];
     }
     
-    //Break message up into individual words to locate all one-letter words
+    //Break message up into individual words
     char msg2[size];
     char *found;
+    
+    //Zero words array
+    for(int j = 0; j < 200; j++) {
+        for(int i = 0; i < 15; i++) {
+            words[j][i] = '\0';
+        }
+    }
     
     //Create new msg array to be 'broken up'
     for(int i = 0; i < size; i++) {
         msg2[i] = msg[i];
     }
     
+    //Store each word in 2D array of chars.
+    int noWords = 0;
+    int wordLen;
     found = strtok(msg2, " ");
     while(found != NULL) {
-        if(strlen(found) == 1) {
-            ones[found[0] - 65]++; //Add to the index of the letter found. Ie is N is found, it is the 13th letter, so increment index 13.
+        noWords++;
+        wordLen = strlen(found);
+        for(int i = 0; i < wordLen; i++) { //Iterate for each letter in this word
+            if(found[i] >= 65 && found[i] <= 90) {
+                words[noWords][i] = found[i];
+            }
         }
         found = strtok(NULL, " ");
     }
     
-    //Find most common one-letter word.
+    ///////// USING 1 LETTER WORDS AS A or I /////////
+    for(int i = 0; i <= noWords; i++) {
+        if(strlen(words[i]) == 1) {
+            ones[words[i][0] - 65]++;
+        }
+    }
+    
     int max = 0;
     int index;
     for(int i = 0; i < 26; i++) {
@@ -458,30 +484,74 @@ void substitutionDecNoKey(char *msg, int size) {
         }
     }
     
-    newKey[0] = index + 65; //Assume this letter should be A.
+    newKey[0] = index + 65; //Assume this letter should be A, possibly overwriting the substitution for 'A' from frequency analysis.
     
-    for(int i = 0; i < 26; i++) {
-        printf("%c", newKey[i]);
+    ////////// ASSIGNING MOST COMMON 3 LETTER WORD AS THE /////////////
+    int no3Words = 0;
+    int pos3 = 0;
+    for(int i = 0; i <= noWords; i++) {
+        if(strlen(words[i]) == 3) {
+            threes[pos3][0] = words[i][0];
+            threes[pos3][1] = words[i][1];
+            threes[pos3][2] = words[i][2];
+            no3Words++;
+            pos3++;
+        }
     }
-    printf("\n");
-  
-   partialSubDec(msg, newKey, size);
-   
-   printf("\nDay one cipher texts provided:\n");
-   partialSubDec(msg, "NWLRBMQHCDAZOKYITXJFEGPUVD", size);
-}
-
-void partialSubDec(char *msg, char *newKey, int size) {
+    
+    //Find most common 3 letter word
+    int threeMatches[no3Words];
+    char tempStr1[3];
+    char tempStr2[3];
+    for(int j = 0; j < no3Words; j++) {
+        for(int t = 0; t < 3; t++) {
+                tempStr1[t] = threes[j][t];
+            }
+        for(int i = 0; i < no3Words; i++) {
+            for(int t = 0; t < 3; t++) {
+                tempStr2[t] = threes[i][t];
+            }
+            if(strcmp(tempStr1, tempStr2) == 0) {
+                threeMatches[j]++;
+            }
+        }
+    }
+    
+    int max2 = 0;
+    int index2;
+    for(int i = 0; i < no3Words; i++) {
+        if(threeMatches[i] > max2) {
+            max2 = threeMatches[i];
+            index2 = i;
+        }
+    }
+    
+    //Most common 3 letter word found. Now assign the letters of this word to 'T', 'H', and 'E' respectively
+    newKey[19] = threes[index2][0];
+    newKey[7] = threes[index2][1];
+    newKey[4] = threes[index2][2];
+    
+    //printf("Most common 3 letter words was: %c%c%c\n", threes[index2][0], threes[index2][1], threes[index2][2]);
+    
+    //Now attempt to decrypt and print out possilbe answers to file and stdout
+    FILE * encrypted; //Delare a pointer to a file
     char temp2;
+    encrypted = fopen("output.txt", "w");  //Open a new file
+    
+    /////////// Day 1 Text Attempt ///////////
+    fprintf(encrypted, "If day one cipher:\n");
+    printf("If day one cipher:\n");
     
     for(int i = 0; i < size; i++) {
         if(msg[i] < 65 || msg[i] > 90) {
-          printf("%c", msg[i]);
+          fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
         } else {
             for(int j = 0; j < 27; j++) {
-                if(msg[i] == newKey[j]) {
+                if(msg[i] == special[j]) {
                     temp2 = j + 65;
-                    printf("%c", temp2);
+                    fprintf(encrypted, "%c", temp2); //Print to file
+                    printf("%c", temp2); //Print to stdout (for markers)
                     break;
                 }
                 if(j == 26) {
@@ -492,7 +562,34 @@ void partialSubDec(char *msg, char *newKey, int size) {
         }
     }
     
-    printf("\n");
+    /////////// Statistical Analysis Attempt ///////////
+    fprintf(encrypted, "\n\nStatistical analysis attempt:\n");
+    fprintf(encrypted, "Assumptions: Character frequencies follow 'ETAOINSRHLDCUMFPGWYBVKXJQZ' from MOST to LEAST frequent.\n");
+    fprintf(encrypted, "           : The most common 1 letter word was '%c', and so this word was substituted for 'A'.\n", index + 65);
+    fprintf(encrypted, "           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n\n", threes[index2][0], threes[index2][1], threes[index2][2]);
+    printf("\n\nStatistical analysis attempt:\n");
+    printf("Assumptions: Character frequencies follow 'ETAOINSRHLDCUMFPGWYBVKXJQZ' from MOST to LEAST frequent.\n");
+    printf("           : The most common 1 letter word was '%c', and so this word was substituted for 'A'.\n", index + 65);
+    printf("           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n\n", threes[index2][0], threes[index2][1], threes[index2][2]);
+    for(int i = 0; i < size; i++) {
+        if(msg[i] < 65 || msg[i] > 90) {
+          fprintf(encrypted, "%c", msg[i]); //Print to file
+          printf("%c", msg[i]); //Print to stdout (for markers)
+        } else {
+            for(int j = 0; j < 27; j++) {
+                if(msg[i] == newKey[j]) {
+                    temp2 = j + 65;
+                    fprintf(encrypted, "%c", temp2); //Print to file
+                    printf("%c", temp2); //Print to stdout (for markers)
+                    break;
+                }
+                if(j == 26) {
+                    printf("*");
+                    break;
+                }
+            }
+        }
+    }
+    
+    fclose(encrypted);
 }
-
-
