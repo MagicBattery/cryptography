@@ -37,7 +37,7 @@
                                     |_______ Nothing if key not applicable (ie. #)
                                     
   
-  FOLLOWING LINES: Cipher / plain text
+  LINE #3: Cipher / plain text (all on the one line, case optional)
 */
 
 #include <stdio.h>
@@ -61,17 +61,19 @@ void substitutionEnc(char *msg, char *s, int size); //Substitution cipher functi
 void substitutionDec(char *msg, char *s, int size); //Substitution cipher function prototype
 void substitutionDecNoKey(char *msg, int size); //Substitution cipher function prototype
 
+
+//Mainline function to direct the program into differnt functions
 int main() {
   
-  int mode;
-  int rotKey;
-  char subKey[26];
+  int mode; //Integer to be read from Line #1 of input file, specifying task selection, i.e. 0 = rotation encryption (see table above)
+  int rotKey; //Variable to store rotation key if extracted from file
+  char subKey[26]; //Variable to store substitution key if extracted from file
   char modeChar[50];
   char key[27]; //Enough space for '#' followed by 26-letter substitution
-  char msg[1000] = {0};
+  char msg[1000] = {0}; //Very large array to store the inputted message
   
   readInput(modeChar, key, msg);
-  int size = msgSize(msg);
+  int size = msgSize(msg); //Store the size of the message (no characters)
   convertCaps(msg, size); //Compute text as block letters for consistency and simplicity
   mode = atoi(modeChar); //Convert the mode string to an integer
   
@@ -87,7 +89,6 @@ int main() {
               //Rotation decryption
               rotKey = getRotKey(key);
               rotationDec(msg, rotKey, size);
-              
               break;
               
       case 2:
@@ -116,14 +117,13 @@ int main() {
                break;
   }
 
-  printf("\nFile output!\n");
-
   return 0;
 }
 
 /////////////////////////////////////////////////// PERIPHERY FUNCTIONS ////////////////////////////////////////////////////
 
-//Read input from file, and delineate header components
+//Read input from file, and delineate header components. Args: *mode - to store mode from input, *key - to store key from input, 
+//*msg to store the message from input.
 void readInput(char *mode, char *key, char *msg) {
     
     FILE *input;
@@ -144,17 +144,19 @@ void readInput(char *mode, char *key, char *msg) {
 }
 
 
-//Determine the size of only the message read from the file
+//Determine the size of only the message read from the file. Args: *msg - to find its size
 int msgSize(char *msg) {
     int size = 0;
     
-    while(msg[size] != NULL) {
+    while(msg[size] != '\0') {
         size ++;
     }
     
     return size;
 }
 
+
+//Converts all input text to CAPITALS. Args *msg - to be capitalised, *size - to prevent accessing memory out of range.
 void convertCaps(char *msg, int size){
     for(int i = 0; i < size; i++) {
         if(msg[i] >= 97 && msg[i] <= 122) {
@@ -165,6 +167,7 @@ void convertCaps(char *msg, int size){
     return;
 }
 
+//Returns integer for how many times any of the top 1000 english words appear in the input string. Args *msg - input string
 int uniqueWords(char *msg) {
     
     //Read the dictionary and store the words in a 2D array
@@ -188,6 +191,8 @@ int uniqueWords(char *msg) {
     return matches;
 }
 
+//Determine how many times one 'needle' string (smaller) is found in a 'haystack' string (larger). Args *needle - small string,
+//*haystack - larger string
 int strFreq(char *haystack, char *needle) {
     int len1 = strlen(haystack);
     int len2 = strlen(needle);
@@ -212,18 +217,18 @@ int strFreq(char *haystack, char *needle) {
     return freq;
 }
 
-//Convert the header file Line #2 to a computable rotation cipher key (integer)
+//Convert the header file Line #2 to a computable rotation cipher key (integer). Args: *key - to read and manipulate the key text from input
 int getRotKey(char *key) {
     key[0] = ' '; //Get rid of the prefix '#'
     return atoi(key); //Convert remaining numerals to an integer and return
 }
 
 //Remove the hash '#' of the header file substitution key from Line #2 and store in new array subKey[]
+//Args: *key - to manupulate the key array from input, *subKey to correctly write the 26 characters to one substitutional key array.
 void getSubKey(char *key, char *subKey) {
     for(int i = 0; i <= 25; i++) {
-        subKey[i] = key[i + 1];
+        subKey[i] = key[i + 1]; // + 1 to remove th first '#' which is not part of the key.
     }
-    
     return;
 }
 
@@ -234,6 +239,7 @@ void getSubKey(char *key, char *subKey) {
 
 
 ///////////////////// ROTATION CIPHER ENCRYPTION ////////////////////////
+//Args: *msg - message to be encrypted, k - rotation cipher key to use, size - size of the message (characters) for array computation
 void rotationEnc(char *msg, int k, int size) { //Rotation cipher which takes the input message array, the empty output array, rotation key and size (of the array) as arguments
     
   FILE * encrypted; //Delare a pointer to a file
@@ -245,20 +251,21 @@ void rotationEnc(char *msg, int k, int size) { //Rotation cipher which takes the
           fprintf(encrypted, "%c", msg[i]); //Print to file
           printf("%c", msg[i]); //Print to stdout (for markers)
       } else {
-          temp = ((msg[i] - 65 + k)%26) + 65;
+          temp = ((msg[i] - 65 + k)%26) + 65; //Perform rotation encryption algorithm
           fprintf(encrypted, "%c", temp); //Print to file
           printf("%c", temp); //Print to stdout (for markers)
       }
-    } 
-
+  } 
   
   fclose(encrypted); //Close the file
+  printf("\nFile output!\n");
   
   return;
 }
 
 
 ////////////// ROTATION CIPHER DECRYPTION (KEY) ////////////////////
+//Args: *msg - message to be decrypted, k - rotation cipher key to use, size - size of the message (characters) for array computation
 void rotationDec(char *msg, int k, int size) {
     
     FILE * encrypted; //Delare a pointer to a file
@@ -270,22 +277,25 @@ void rotationDec(char *msg, int k, int size) {
           fprintf(encrypted, "%c", msg[i]); //Print to file
           printf("%c", msg[i]); //Print to stdout (for markers)
       } else {
-          temp = ((msg[i] - 65 + (26 - k))%26) + 65;
+          temp = ((msg[i] - 65 + (26 - k))%26) + 65; //Perform rotation decryption algorithm
           fprintf(encrypted, "%c", temp); //Print to file
           printf("%c", temp); //Print to stdout (for markers)
       }
     }
     
-    fprintf(encrypted, "\n\n");
     fclose(encrypted); //Close the file
+    printf("\nFile output!\n");
   
     return;
 }
 
 ////////////// ROTATION CIPHER DECRYPTION (NO KEY) ////////////////////
+//Args: *msg - message to be encrypted, size - size of the message (characters) for array computation
+//NOTE: no key provided
 void rotationDecNoKey(char *msg, int size) {
     
     int msgSize = strlen(msg);
+    printf("%d vs %d\n\n", size, msgSize);
     char attempts[26][msgSize]; //Store 26 new arrays, trying each key for later analysis
     int matchingWords[26] = {0}; //To test how many words match the dictionary for all 26 keys
     int matchingWordsIndex[26] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
@@ -348,6 +358,7 @@ void rotationDecNoKey(char *msg, int size) {
 }
 
 ////////////// SUBSTITUTION CIPHER ENCRYPTION ////////////////////
+//Args: *msg - message to be encrypted, *s - substituion array (key) to use, size - size of the message (characters) for array computation
 void substitutionEnc(char *msg, char *s, int size) {
     
     FILE * encrypted; //Delare a pointer to a file
@@ -369,6 +380,7 @@ void substitutionEnc(char *msg, char *s, int size) {
 }
 
 ////////////// SUBSTITUTION CIPHER DECRYPTION (KEY) ////////////////////
+//Args: *msg - message to be decrypted, *s - substituion array (key) to use, size - size of the message (characters) for array computation
 void substitutionDec(char *msg, char *s, int size) {
     
     FILE * encrypted; //Delare a pointer to a file
@@ -396,6 +408,8 @@ void substitutionDec(char *msg, char *s, int size) {
 }
 
 ////////////// SUBSTITUTION CIPHER DECRYPTION (NO KEY) ////////////////////
+//Args: *msg - message to be decrypted, size - size of the message (characters) for array computation
+//NOTE: no key provided
 void substitutionDecNoKey(char *msg, int size) {
     char newKey[26] = {0};
     int letterFreq[26] = {0};
@@ -486,9 +500,9 @@ void substitutionDecNoKey(char *msg, int size) {
     
     newKey[0] = index + 65; //Assume this letter should be A, possibly overwriting the substitution for 'A' from frequency analysis.
     
-    ////////// ASSIGNING MOST COMMON 3 LETTER WORD AS THE /////////////
-    int no3Words = 0;
-    int pos3 = 0;
+    ////////// ASSIGNING MOST COMMON 3 LETTER WORD AS 'THE' /////////////
+    int no3Words = 0; //Counter for the number of 3 letter words found
+    int pos3 = 0; //Index position indictor for the array threes[][];
     for(int i = 0; i <= noWords; i++) {
         if(strlen(words[i]) == 3) {
             threes[pos3][0] = words[i][0];
@@ -499,7 +513,7 @@ void substitutionDecNoKey(char *msg, int size) {
         }
     }
     
-    //Find most common 3 letter word
+    //Find frequencies of all 3 letter words
     int threeMatches[no3Words];
     char tempStr1[3];
     char tempStr2[3];
@@ -517,6 +531,7 @@ void substitutionDecNoKey(char *msg, int size) {
         }
     }
     
+    //Find the most common 3 letter word from these frequencies
     int max2 = 0;
     int index2;
     for(int i = 0; i < no3Words; i++) {
@@ -530,8 +545,6 @@ void substitutionDecNoKey(char *msg, int size) {
     newKey[19] = threes[index2][0];
     newKey[7] = threes[index2][1];
     newKey[4] = threes[index2][2];
-    
-    //printf("Most common 3 letter words was: %c%c%c\n", threes[index2][0], threes[index2][1], threes[index2][2]);
     
     //Now attempt to decrypt and print out possilbe answers to file and stdout
     FILE * encrypted; //Delare a pointer to a file
@@ -583,7 +596,7 @@ void substitutionDecNoKey(char *msg, int size) {
                     printf("%c", temp2); //Print to stdout (for markers)
                     break;
                 }
-                if(j == 26) {
+                if(j == 26) { //If there are no substitutions availabe from the above process for a particular letter, just print '*'
                     printf("*");
                     break;
                 }
@@ -591,5 +604,5 @@ void substitutionDecNoKey(char *msg, int size) {
         }
     }
     
-    fclose(encrypted);
+    fclose(encrypted); //Close the file as the program is finished with it
 }
