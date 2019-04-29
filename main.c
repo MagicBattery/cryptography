@@ -170,9 +170,26 @@ void convertCaps(char *msg, int size){
 //Returns integer for how many times any of the top 1000 english words appear in the input string. Args *msg - input string
 int uniqueWords(char *msg) {
     
+    //Store each word from the decryption attempt in a 2D array of chars.
+    int noWords = 0;
+    int wordLen;
+    char words[200][15];
+    char *found;
+    found = strtok(msg, " ");
+    while(found != NULL) {
+        noWords++;
+        wordLen = strlen(found);
+        for(int i = 0; i < wordLen; i++) { //Iterate for each letter in this word
+            if(found[i] >= 65 && found[i] <= 90) {
+                words[noWords][i] = found[i];
+            }
+        }
+        found = strtok(NULL, " ");
+    }
+    
     //Read the dictionary and store the words in a 2D array
-    int words = 1000;
-    char line[words + 1][10];
+    int wordsL = 1000;
+    char line[wordsL + 1][10];
     FILE * dictionaryFile = fopen("words.txt", "r");
     int i = 0;
     int matches = 0;
@@ -184,9 +201,17 @@ int uniqueWords(char *msg) {
     
     fclose(dictionaryFile);
     
-    for(int i = 0; i < words; i++) {
-        matches += strFreq(msg, line[i]);
+    for(int j = 0; j < noWords; j++) {
+        for(int i = 0; i < wordsL; i++) {
+            if(strcmp(words[j], line[i]) == 0) {
+                matches++;
+            }
+        }
     }
+    /*
+    for(int i = 0; i < wordsL; i++) {
+        matches += strFreq(words, line[i]);
+    }*/
     
     return matches;
 }
@@ -295,7 +320,6 @@ void rotationDec(char *msg, int k, int size) {
 void rotationDecNoKey(char *msg, int size) {
     
     int msgSize = strlen(msg);
-    printf("%d vs %d\n\n", size, msgSize);
     char attempts[26][msgSize]; //Store 26 new arrays, trying each key for later analysis
     int matchingWords[26] = {0}; //To test how many words match the dictionary for all 26 keys
     int matchingWordsIndex[26] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25};
@@ -303,13 +327,12 @@ void rotationDecNoKey(char *msg, int size) {
     
     //Decrypt with all 26 possible keys
     for(int x = 0; x < 26; x++) {
-        
         for(int i = 0; i < msgSize; i++) { //Iterate through each element in the msg array, converting each character to be encrypted, then storing in the cipher array.
             if(msg[i] < 65 || msg[i] > 90) {
-                attempts[x][i] = msg[i]; //Print to file
+                attempts[x][i] = msg[i]; //Print
             } else {
                 temp = ((msg[i] - 65 + (26 - x))%26) + 65;
-                attempts[x][i] = temp; //Print to file
+                attempts[x][i] = temp; //Print
             }
         }
         
@@ -350,8 +373,6 @@ void rotationDecNoKey(char *msg, int size) {
           }
         }
         
-        fprintf(encrypted, "\n\n");
-        printf("\n\n");
     }
     fclose(encrypted); //Close the file
 
