@@ -51,7 +51,6 @@ int getRotKey(char *key);
 void getSubKey(char *key, char *ubKey);
 void convertCaps(char *msg, int size);
 int uniqueWords(char *msg);
-int strFreq(char *msg, char *line);
 
 void rotationEnc(char *msg, int k, int size); //Rotation cipher function prototype (encryption mode)
 void rotationDec(char *msg, int k, int size); //Rotation cipher function prototype (decryption mode)
@@ -208,38 +207,8 @@ int uniqueWords(char *msg) {
             }
         }
     }
-    /*
-    for(int i = 0; i < wordsL; i++) {
-        matches += strFreq(words, line[i]);
-    }*/
     
     return matches;
-}
-
-//Determine how many times one 'needle' string (smaller) is found in a 'haystack' string (larger). Args *needle - small string,
-//*haystack - larger string
-int strFreq(char *haystack, char *needle) {
-    int len1 = strlen(haystack);
-    int len2 = strlen(needle);
-    int i = 0, j, count, freq = 0;
-    
-    while(i < len1) {
-        j = 0;
-        count = 0;
-        
-        while(haystack[i] == needle[j] && j < len2) {
-            count++;
-            i++;
-            j++;
-        }
-        
-        if(count == len2) {
-            freq++;
-        }
-        
-        i++;
-    }
-    return freq;
 }
 
 //Convert the header file Line #2 to a computable rotation cipher key (integer). Args: *key - to read and manipulate the key text from input
@@ -597,14 +566,14 @@ void substitutionDecNoKey(char *msg, int size) {
     }
     
     /////////// Statistical Analysis Attempt ///////////
-    fprintf(encrypted, "\n\nStatistical analysis attempt:\n");
+    fprintf(encrypted, "Statistical analysis attempt:\n");
     fprintf(encrypted, "Assumptions: Character frequencies follow 'ETAOINSRHLDCUMFPGWYBVKXJQZ' from MOST to LEAST frequent.\n");
     fprintf(encrypted, "           : The most common 1 letter word was '%c', and so this word was substituted for 'A'.\n", index + 65);
-    fprintf(encrypted, "           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n\n", threes[index2][0], threes[index2][1], threes[index2][2]);
-    printf("\n\nStatistical analysis attempt:\n");
+    fprintf(encrypted, "           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n", threes[index2][0], threes[index2][1], threes[index2][2]);
+    printf("Statistical analysis attempt:\n");
     printf("Assumptions: Character frequencies follow 'ETAOINSRHLDCUMFPGWYBVKXJQZ' from MOST to LEAST frequent.\n");
     printf("           : The most common 1 letter word was '%c', and so this word was substituted for 'A'.\n", index + 65);
-    printf("           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n\n", threes[index2][0], threes[index2][1], threes[index2][2]);
+    printf("           : The most common 3 letter word was '%c%c%c', and so this word was substituted for 'T', 'H' and 'E' respectively.\n", threes[index2][0], threes[index2][1], threes[index2][2]);
     for(int i = 0; i < size; i++) {
         if(msg[i] < 65 || msg[i] > 90) {
           fprintf(encrypted, "%c", msg[i]); //Print to file
